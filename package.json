@@ -1,5 +1,5 @@
 {
-  "name": "webext-offscreen",
+  "name": "@theluckystrike/webext-offscreen",
   "version": "1.0.0",
   "description": "Typed offscreen document creation and messaging for Chrome extensions",
   "main": "dist/index.js",
@@ -13,7 +13,8 @@
   "files": ["dist"],
   "scripts": {
     "build": "tsc",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepare": "npm run build"
   },
   "keywords": ["chrome-extension", "offscreen", "webextension", "typescript"],
   "author": "theluckystrike",

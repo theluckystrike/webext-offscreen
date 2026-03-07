@@ -1,4 +1,5 @@
-[![npm](https://img.shields.io/npm/v/webext-offscreen)](https://www.npmjs.com/package/webext-offscreen)
+[![CI](https://github.com/theluckystrike/webext-offscreen/actions/workflows/ci.yml/badge.svg)](https://github.com/theluckystrike/webext-offscreen/actions)
+[![npm](https://img.shields.io/npm/v/@theluckystrike/webext-offscreen)](https://www.npmjs.com/package/@theluckystrike/webext-offscreen)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
 
@@ -6,12 +7,12 @@
 
 Typed offscreen document creation and messaging for Chrome extensions.
 
-Part of the [chrome-extension-guide](https://github.com/niceByte/chrome-extension-guide) ecosystem.
+Part of the [chrome-extension-guide](https://github.com/theluckystrike/chrome-extension-guide) ecosystem.
 
 ## Install
 
 ```bash
-npm install webext-offscreen
+npm install @theluckystrike/webext-offscreen
 ```
 
 ## Usage

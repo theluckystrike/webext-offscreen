@@ -1,7 +1,7 @@
 {
   "name": "webext-offscreen",
   "version": "1.0.0",
-  "description": "Typed offscreen document creation and messaging for Chrome extensions",
+  "description": "Typed offscreen document creation and messaging for Chrome MV3 extensions — DOM parsing, audio, canvas, and more. Part of @zovo/webext.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {

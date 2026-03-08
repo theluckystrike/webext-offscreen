@@ -1,6 +1,7 @@
 # webext-offscreen
 
 [![npm version](https://img.shields.io/npm/v/webext-offscreen.svg)](https://www.npmjs.com/package/webext-offscreen)
+[![CI](https://github.com/theluckystrike/webext-offscreen/actions/workflows/ci.yml/badge.svg)](https://github.com/theluckystrike/webext-offscreen/actions/workflows/ci.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-ready-blue.svg)](https://www.typescriptlang.org/)
 [![MIT License](https://img.shields.io/npm/l/webext-offscreen.svg)](https://opensource.org/licenses/MIT)
 

@@ -1,100 +1,106 @@
-[![CI](https://github.com/theluckystrike/webext-offscreen/actions/workflows/ci.yml/badge.svg)](https://github.com/theluckystrike/webext-offscreen/actions)
-[![npm](https://img.shields.io/npm/v/@theluckystrike/webext-offscreen)](https://www.npmjs.com/package/@theluckystrike/webext-offscreen)
+<div align="center">
+
+# @theluckystrike/webext-offscreen
+
+Typed offscreen document creation and messaging for Chrome extensions. Manage MV3 offscreen documents with a clean API.
+
+[![npm version](https://img.shields.io/npm/v/@theluckystrike/webext-offscreen)](https://www.npmjs.com/package/@theluckystrike/webext-offscreen)
+[![npm downloads](https://img.shields.io/npm/dm/@theluckystrike/webext-offscreen)](https://www.npmjs.com/package/@theluckystrike/webext-offscreen)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
+![npm bundle size](https://img.shields.io/bundlephobia/minzip/@theluckystrike/webext-offscreen)
 
-# webext-offscreen
+[Installation](#installation) · [Quick Start](#quick-start) · [API](#api) · [License](#license)
 
-Typed offscreen document creation and messaging for Chrome extensions.
+</div>
 
-Part of the [chrome-extension-guide](https://github.com/theluckystrike/chrome-extension-guide) ecosystem.
+---
 
-## Install
+## Features
+
+- **Document lifecycle** -- create and close offscreen documents
+- **Reason types** -- typed reasons for offscreen document creation
+- **Messaging** -- send and receive messages to/from offscreen documents
+- **Singleton guard** -- prevents creating duplicate offscreen documents
+- **Typed** -- full TypeScript support
+- **Promise-based** -- async/await for all operations
+
+## Installation
 
 ```bash
 npm install @theluckystrike/webext-offscreen
 ```
 
-## Usage
+<details>
+<summary>Other package managers</summary>
 
-### Service Worker (Background)
-
-```typescript
-import { ensureOffscreen, sendToOffscreen, createOffscreenHelper } from "webext-offscreen";
-
-// Option 1: Direct API
-await ensureOffscreen({
-  url: "offscreen.html",
-  reasons: ["DOM_PARSER"],
-  justification: "Parse HTML content",
-});
-
-const result = await sendToOffscreen("parse", { html: "<p>Hello</p>" });
-
-// Option 2: Helper pattern
-const offscreen = createOffscreenHelper({
-  url: "offscreen.html",
-  reasons: ["DOM_PARSER"],
-  justification: "Parse HTML content",
-});
-
-await offscreen.ensure();
-const data = await offscreen.send("parse", { html: "<p>Hello</p>" });
-await offscreen.close();
+```bash
+pnpm add @theluckystrike/webext-offscreen
+# or
+yarn add @theluckystrike/webext-offscreen
 ```
 
-### Offscreen Document
+</details>
+
+## Quick Start
 
 ```typescript
-import { onOffscreenMessage, setupOffscreenListener } from "webext-offscreen";
+import { Offscreen } from "@theluckystrike/webext-offscreen";
 
-onOffscreenMessage("parse", (data) => {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(data.html, "text/html");
-  return { text: doc.body.textContent };
+await Offscreen.create({
+  url: "offscreen.html",
+  reasons: ["CLIPBOARD"],
+  justification: "Clipboard access requires an offscreen document in MV3",
 });
 
-// Async handlers work too
-onOffscreenMessage("fetch", async (data) => {
-  const response = await fetch(data.url);
-  return response.json();
-});
-
-setupOffscreenListener();
+await Offscreen.close();
 ```
 
 ## API
 
-### Service Worker Functions
+| Method | Description |
+|--------|-------------|
+| `create(options)` | Create an offscreen document |
+| `close()` | Close the offscreen document |
+| `hasDocument()` | Check if an offscreen document exists |
+| `sendMessage(msg)` | Send a message to the offscreen document |
 
-| Function | Description |
-|----------|-------------|
-| `ensureOffscreen(config)` | Create offscreen document if not exists |
-| `hasOffscreen()` | Check if offscreen document is active |
-| `closeOffscreen()` | Close offscreen document |
-| `sendToOffscreen(type, data)` | Send typed message to offscreen document |
-| `createOffscreenHelper(config)` | Create a reusable helper object |
+## Permissions
 
-### Offscreen Document Functions
-
-| Function | Description |
-|----------|-------------|
-| `onOffscreenMessage(type, handler)` | Register a message handler |
-| `setupOffscreenListener()` | Start listening for messages |
-| `removeHandler(type)` | Remove a message handler |
-| `clearHandlers()` | Remove all handlers |
-
-### Offscreen Reasons
-
-```typescript
-"TESTING" | "AUDIO_PLAYBACK" | "BLOBS" | "CLIPBOARD" | "DOM_PARSER"
-| "DOM_SCRAPING" | "GEOLOCATION" | "LOCAL_STORAGE" | "MATCH_MEDIA" | "WORKERS"
+```json
+{ "permissions": ["offscreen"] }
 ```
+
+## Part of @zovo/webext
+
+This package is part of the [@zovo/webext](https://github.com/theluckystrike) family -- typed, modular utilities for Chrome extension development:
+
+| Package | Description |
+|---------|-------------|
+| [webext-storage](https://github.com/theluckystrike/webext-storage) | Typed storage with schema validation |
+| [webext-messaging](https://github.com/theluckystrike/webext-messaging) | Type-safe message passing |
+| [webext-tabs](https://github.com/theluckystrike/webext-tabs) | Tab query helpers |
+| [webext-cookies](https://github.com/theluckystrike/webext-cookies) | Promise-based cookies API |
+| [webext-i18n](https://github.com/theluckystrike/webext-i18n) | Internationalization toolkit |
+
+## Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-MIT
+MIT License -- see [LICENSE](LICENSE) for details.
 
 ---
 
-Built by [theluckystrike](https://github.com/theluckystrike) — [zovo.one](https://zovo.one)
+<div align="center">
+
+Built by [theluckystrike](https://github.com/theluckystrike) · [zovo.one](https://zovo.one)
+
+</div>

@@ -1,7 +1,7 @@
 {
   "name": "@theluckystrike/webext-offscreen",
   "version": "1.0.0",
-  "description": "Typed offscreen document creation and messaging for Chrome extensions",
+  "description": "Typed offscreen document creation and messaging for Chrome extensions. Part of @zovo/webext.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -23,8 +23,14 @@
   "keywords": [
     "chrome-extension",
     "offscreen",
+    "offscreen-document",
+    "typescript",
     "webextension",
-    "typescript"
+    "browser-extension",
+    "manifest-v3",
+    "mv3",
+    "clipboard",
+    "dom-access"
   ],
   "author": "theluckystrike",
   "license": "MIT",

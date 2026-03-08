@@ -12,7 +12,7 @@ Thank you for your interest in contributing! This document outlines the process 
    ```
 3. **Install dependencies**:
    ```bash
-   npm install
+   pnpm install
    ```
 
 ## Development Workflow

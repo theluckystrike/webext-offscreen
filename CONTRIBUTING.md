@@ -1,56 +1,82 @@
 # Contributing to webext-offscreen
 
-Thank you for your interest in contributing!
+Thank you for your interest in contributing! This guide will help you get started.
 
 ## Getting Started
 
-1. **Fork** the repository
-2. **Clone** your fork:
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/webext-offscreen.git
-   cd webext-offscreen
-   ```
+### Fork the Repository
 
-3. **Install dependencies**:
-   ```bash
-   pnpm install
-   ```
+Click the "Fork" button on the GitHub repository page to create your own copy.
 
-4. **Create a branch** for your changes:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
+### Clone Your Fork
+
+```bash
+git clone https://github.com/YOUR_USERNAME/webext-offscreen.git
+cd webext-offscreen
+```
+
+### Install Dependencies
+
+This project uses pnpm:
+
+```bash
+npm install -g pnpm  # if you don't have pnpm
+pnpm install
+```
+
+### Create a Branch
+
+Create a new branch for your feature or bugfix:
+
+```bash
+git checkout -b feature/your-feature-name
+# or
+git checkout -b fix/your-bug-fix
+```
 
 ## Development
 
-### Running Tests
-
-```bash
-pnpm test
-```
-
-### Building
+### Build the Project
 
 ```bash
 pnpm build
 ```
 
+### Run Tests
+
+```bash
+pnpm test
+```
+
+### Type Checking
+
+```bash
+pnpm typecheck
+```
+
 ## Making Changes
 
-1. Make your changes in the `src/` directory
+1. Make your changes in your feature branch
 2. Ensure tests pass: `pnpm test`
 3. Build the project: `pnpm build`
-4. Commit with a clear message
+4. Commit your changes with a clear message
 5. Push to your fork
-6. Open a Pull Request
 
-## Pull Request Guidelines
+## Pull Request Process
 
-- Follow the existing code style
-- Add tests for new functionality
-- Update documentation as needed
-- Ensure CI passes
+1. Update documentation if needed
+2. Ensure all tests pass
+3. Update the CHANGELOG.md if applicable
+4. Submit a pull request to the `main` branch
+5. Describe your changes clearly in the PR description
 
-## License
+## Code Style
 
-By contributing, you agree that your contributions will be licensed under the MIT License.
+- Use TypeScript
+- Follow existing code patterns
+- Add types for new functions
+- Write tests for new features
+
+## Questions?
+
+Feel free to open an issue for questions about contributing.

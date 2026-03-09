@@ -1,37 +1,44 @@
-[![CI](https://github.com/theluckystrike/webext-offscreen/actions/workflows/ci.yml/badge.svg)](https://github.com/theluckystrike/webext-offscreen/actions)
+[![CI](https://github.com/theluckystrike/webext-offscreen/actions/workflows/ci.yml/badge.svg)](https://github.com/theluckystrike/webext-offscreen/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@theluckystrike/webext-offscreen)](https://www.npmjs.com/package/@theluckystrike/webext-offscreen)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
 
 # webext-offscreen
 
-Typed offscreen document creation and messaging for Chrome MV3 extensions.
-
-Part of the [@zovo/webext](https://github.com/theluckystrike/webext) ecosystem.
+Typed offscreen document creation and messaging for Chrome MV3 extensions — DOM parsing, audio, canvas, clipboard, and more. Part of [@zovo/webext](https://github.com/theluckystrike/webext).
 
 ## Why Offscreen Documents?
 
-Chrome MV3 extensions removed DOM access from service workers. This broke common extension patterns:
+Chrome Manifest V3 removed access to the DOM from service workers. Background scripts can no longer directly:
 
-- **DOM Parsing** — No more `document.createElement()` in background scripts
-- **Audio/Video Processing** — Media elements require a DOM environment
-- **Canvas Operations** — Drawing and image manipulation needs a document
-- **Clipboard Access** — Advanced clipboard operations need DOM APIs
+- Parse HTML with `DOMParser`
+- Work with `<canvas>` elements
+- Play audio through HTML5 `<audio>`
+- Access the clipboard via the Clipboard API
+- Use Web Workers directly
 
-Offscreen documents provide a hidden DOM environment for these tasks. This library makes them type-safe and easy to use.
+**Offscreen documents** provide a solution — they create a temporary page context that runs alongside your service worker, giving you full DOM and window APIs back.
 
 ## Features
 
-- ✅ **Typed API** — Full TypeScript support with proper types
-- ✅ **Auto-close** — Automatically close documents when done
-- ✅ **Singleton Pattern** — Helper class for reusable offscreen management
-- ✅ **Message Passing** — Type-safe communication between background and offscreen
-- ✅ **All Reasons** — Support for all Chrome offscreen document reasons
+- **Typed API** — Full TypeScript support with inferred types
+- **Helper Pattern** — Reusable `OffscreenHelper` for cleaner code
+- **Message Routing** — Register handlers by message type
+- **Async Support** — Both sync and async handlers work seamlessly
+- **Singleton Management** — Automatic creation/deduplication
+- **Auto-cleanup** — Close documents when done
+- **All MV3 Reasons** — Support for `DOM_PARSER`, `AUDIO_PLAYBACK`, `CLIPBOARD`, `WORKERS`, and more
 
 ## Install
 
 ```bash
 npm install @theluckystrike/webext-offscreen
+```
+
+Or with pnpm:
+
+```bash
+pnpm add @theluckystrike/webext-offscreen
 ```
 
 ## Quick Start
@@ -62,7 +69,7 @@ const data = await offscreen.send("parse", { html: "<p>Hello</p>" });
 await offscreen.close();
 ```
 
-### 2. Offscreen Document
+### 2. Offscreen Document (`offscreen.html`)
 
 ```typescript
 import { onOffscreenMessage, setupOffscreenListener } from "webext-offscreen";
@@ -82,98 +89,117 @@ onOffscreenMessage("fetch", async (data) => {
 setupOffscreenListener();
 ```
 
-## Use Case Examples
+## Use Cases
 
 ### DOM Parsing
 
-Parse HTML content in the background without external dependencies:
+Parse HTML or XML in your background script:
 
 ```typescript
-// Background script
+// Background
 const offscreen = createOffscreenHelper({
   url: "offscreen.html",
   reasons: ["DOM_PARSER"],
-  justification: "Extract metadata from HTML",
+  justification: "Parse HTML for content extraction",
 });
 
 await offscreen.ensure();
-const metadata = await offscreen.send<{ html: string }, { title: string; links: string[] }>("parse", {
-  html: documentContent,
+const { text, links } = await offscreen.send("extract", {
+  html: `<html><body><a href="/a">Link</a></body></html>`
 });
-await offscreen.close();
-
-// In offscreen.html
-onOffscreenMessage("parse", (data) => {
-  const doc = new DOMParser().parseFromString(data.html, "text/html");
-  const links = Array.from(doc.querySelectorAll("a")).map((a) => a.href);
-  return { title: doc.title, links };
-});
-
-setupOffscreenListener();
 ```
 
-### Audio Playback
-
-Process audio files in the background:
-
 ```typescript
-// Background script
-const audioOffscreen = createOffscreenHelper({
-  url: "audio.html",
-  reasons: ["AUDIO_PLAYBACK"],
-  justification: "Analyze audio files",
+// Offscreen
+onOffscreenMessage("extract", ({ html }) => {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  const links = Array.from(doc.querySelectorAll("a")).map(a => a.href);
+  return { text: doc.body.textContent, links };
 });
-
-await audioOffscreen.ensure();
-const analysis = await audioOffscreen.send("analyze", { audioData: buffer });
 ```
 
 ### Canvas Operations
 
-Draw images or generate graphics:
+Generate images or process graphics:
 
 ```typescript
-// Background script
-const canvasOffscreen = createOffscreenHelper({
-  url: "canvas.html",
-  reasons: ["BLOBS"],
+// Background
+const offscreen = createOffscreenHelper({
+  url: "offscreen.html",
+  reasons: ["CANVAS"],
   justification: "Generate preview images",
 });
 
-await canvasOffscreen.ensure();
-const blob = await canvasOffscreen.send<{ width: number; height: number; color: string }, Blob>(
-  "generate",
-  { width: 200, height: 200, color: "#ff0000" }
-);
+const blob = await offscreen.send("generate", { width: 200, height: 200 });
+// Use blob in your extension
 ```
 
-### Clipboard Operations
+### Audio Playback
 
-Advanced clipboard access from background:
+Play sounds from the background:
 
 ```typescript
-// Background script
-const clipboardOffscreen = createOffscreenHelper({
-  url: "clipboard.html",
-  reasons: ["CLIPBOARD"],
-  justification: "Read clipboard with formatting",
+// Background
+const offscreen = createOffscreenHelper({
+  url: "offscreen.html",
+  reasons: ["AUDIO_PLAYBACK"],
+  justification: "Play notification sounds",
 });
 
-await clipboardOffscreen.ensure();
-const clipboardData = await clipboardOffscreen.send("read", {});
+await offscreen.send("play", { src: "/sounds/alert.mp3" });
+```
+
+### Clipboard Access
+
+Read/write clipboard from background:
+
+```typescript
+// Background
+const offscreen = createOffscreenHelper({
+  url: "offscreen.html",
+  reasons: ["CLIPBOARD"],
+  justification: "Copy extracted data to clipboard",
+});
+
+await offscreen.send("copy", { text: "Hello, clipboard!" });
+```
+
+### Web Workers
+
+Run compute-heavy tasks:
+
+```typescript
+// Background
+const offscreen = createOffscreenHelper({
+  url: "offscreen.html",
+  reasons: ["WORKERS"],
+  justification: "Process large dataset with Web Worker",
+});
+
+const result = await offscreen.send("process", { data: bigArray });
 ```
 
 ## API Reference
 
 ### Service Worker Functions
 
-| Function | Description |
-|----------|-------------|
-| `ensureOffscreen(config)` | Create offscreen document if not exists |
-| `hasOffscreen()` | Check if offscreen document is active |
-| `closeOffscreen()` | Close offscreen document |
-| `sendToOffscreen(type, data)` | Send typed message to offscreen document |
-| `createOffscreenHelper(config)` | Create a reusable helper object |
+| Function | Description | Returns |
+|----------|-------------|---------|
+| `ensureOffscreen(config)` | Create offscreen document if not exists | `Promise<void>` |
+| `hasOffscreen()` | Check if offscreen document is active | `Promise<boolean>` |
+| `closeOffscreen()` | Close offscreen document | `Promise<void>` |
+| `sendToOffscreen(type, data)` | Send typed message to offscreen | `Promise<TOut>` |
+| `createOffscreenHelper(config)` | Create a reusable helper object | `OffscreenHelper` |
+
+### Offscreen Helper Methods
+
+| Method | Description | Returns |
+|--------|-------------|---------|
+| `ensure()` | Ensure document exists | `Promise<void>` |
+| `close()` | Close the document | `Promise<void>` |
+| `isActive()` | Check if document is active | `Promise<boolean>` |
+| `send(type, data)` | Send message to document | `Promise<TOut>` |
 
 ### Offscreen Document Functions
 
@@ -186,9 +212,11 @@ const clipboardData = await clipboardOffscreen.send("read", {});
 
 ### Offscreen Reasons
 
-```typescript
-"TESTING" | "AUDIO_PLAYBACK" | "BLOBS" | "CLIPBOARD" | "DOM_PARSER"
-| "DOM_SCRAPING" | "GEOLOCATION" | "LOCAL_STORAGE" | "MATCH_MEDIA" | "WORKERS"
+All Chrome MV3 reasons are supported:
+
+```
+TESTING | AUDIO_PLAYBACK | BLOBS | CLIPBOARD | DOM_PARSER
+DOM_SCRAPING | GEOLOCATION | LOCAL_STORAGE | MATCH_MEDIA | WORKERS
 ```
 
 ## License

@@ -1,82 +1,83 @@
 # Contributing to webext-offscreen
 
-Thank you for your interest in contributing! This guide will help you get started.
+Thank you for your interest in contributing! This document outlines the process for contributing to this project.
 
 ## Getting Started
 
-### Fork the Repository
+1. **Fork the repository** on GitHub
+2. **Clone your fork** locally:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/webext-offscreen.git
+   cd webext-offscreen
+   ```
+3. **Install dependencies**:
+   ```bash
+   pnpm install
+   ```
 
-Click the "Fork" button on the GitHub repository page to create your own copy.
+## Development Workflow
 
-### Clone Your Fork
+1. Create a new branch for your feature or fix:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
 
-```bash
-git clone https://github.com/YOUR_USERNAME/webext-offscreen.git
-cd webext-offscreen
-```
+2. Make your changes and **add tests** if applicable
 
-### Install Dependencies
+3. Run the test suite:
+   ```bash
+   npm test
+   ```
 
-This project uses pnpm:
+4. Build the project:
+   ```bash
+   npm run build
+   ```
 
-```bash
-npm install -g pnpm  # if you don't have pnpm
-pnpm install
-```
+5. Commit your changes with a clear message:
+   ```bash
+   git commit -m "Add: description of your changes"
+   ```
 
-### Create a Branch
-
-Create a new branch for your feature or bugfix:
-
-```bash
-git checkout -b feature/your-feature-name
-# or
-git checkout -b fix/your-bug-fix
-```
-
-## Development
-
-### Build the Project
-
-```bash
-pnpm build
-```
-
-### Run Tests
-
-```bash
-pnpm test
-```
-
-### Type Checking
-
-```bash
-pnpm typecheck
-```
-
-## Making Changes
-
-1. Make your changes in your feature branch
-2. Ensure tests pass: `pnpm test`
-3. Build the project: `pnpm build`
-4. Commit your changes with a clear message
-5. Push to your fork
-
-## Pull Request Process
-
-1. Update documentation if needed
-2. Ensure all tests pass
-3. Update the CHANGELOG.md if applicable
-4. Submit a pull request to the `main` branch
-5. Describe your changes clearly in the PR description
+6. Push to your fork and **submit a pull request**
 
 ## Code Style
 
-- Use TypeScript
-- Follow existing code patterns
-- Add types for new functions
-- Write tests for new features
+- Use **TypeScript** for all new code
+- Follow the existing code style and conventions
+- Run linting before submitting (if configured)
+- Keep functions small and focused
 
-## Questions?
+## Types
 
-Feel free to open an issue for questions about contributing.
+When adding new functionality:
+
+1. Define TypeScript types first
+2. Export types that users might need
+3. Keep the API surface minimal
+
+## Testing
+
+- Add tests for new functionality
+- Ensure existing tests pass
+- Test both sync and async handlers
+
+## Pull Request Guidelines
+
+- **Branch**: Submit PRs to the `main` branch
+- **Description**: Clearly describe the changes
+- **Linked Issues**: Reference any related issues
+- **Breaking Changes**: Document if applicable
+
+## Reporting Issues
+
+When reporting bugs or requesting features:
+
+1. Check if the issue already exists
+2. Provide a clear reproduction steps
+3. Include relevant code samples
+4. Specify your environment (Chrome version, OS, etc.)
+
+## License
+
+By contributing, you agree that your contributions will be licensed under the MIT License.

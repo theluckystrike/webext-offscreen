@@ -1,157 +1,217 @@
+[![CI](https://github.com/theluckystrike/webext-offscreen/actions/workflows/ci.yml/badge.svg)](https://github.com/theluckystrike/webext-offscreen/actions)
+[![npm](https://img.shields.io/npm/v/@theluckystrike/webext-offscreen)](https://www.npmjs.com/package/@theluckystrike/webext-offscreen)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
+
 # webext-offscreen
 
-[![npm version](https://img.shields.io/npm/v/webext-offscreen.svg)](https://www.npmjs.com/package/webext-offscreen)
-[![CI](https://github.com/theluckystrike/webext-offscreen/actions/workflows/ci.yml/badge.svg)](https://github.com/theluckystrike/webext-offscreen/actions/workflows/ci.yml)
-[![TypeScript](https://img.shields.io/badge/TypeScript-ready-blue.svg)](https://www.typescriptlang.org/)
-[![MIT License](https://img.shields.io/npm/l/webext-offscreen.svg)](https://opensource.org/licenses/MIT)
-
-Typed offscreen document creation and messaging for Chrome extensions.
+Typed offscreen document creation and messaging for Chrome MV3 extensions — DOM parsing, audio, canvas, and more. Part of [@zovo/webext](https://github.com/theluckystrike/webext).
 
 ## Why Offscreen Documents?
 
-Chrome's Manifest V3 (MV3) replaced persistent background pages with service workers. While more memory-efficient, service workers **can't access the DOM** — a significant limitation for extensions that need to:
+Chrome Manifest V3 removed DOM access from service workers. Service workers in extensions can no longer:
 
-- Parse HTML/XML using `DOMParser`
-- Play audio with the Web Audio API
-- Manipulate images on `<canvas>` elements
-- Access clipboard from background scripts
-- Use geolocation features directly
+- Parse HTML/XML documents
+- Play audio or video
+- Use Canvas API for image manipulation
+- Access the clipboard directly
+- Use Web Workers for heavy computation
+- Access geolocation
+- Use localStorage or sessionStorage
 
-**Offscreen documents** solve this. They're hidden browser contexts providing full DOM access for specific tasks. They have a lifecycle (created on-demand, closed when idle) and communicate with your service worker via message passing.
+**Offscreen documents** are the solution. They're hidden browser contexts that live alongside your service worker and provide full DOM capabilities. Use them as a bridge to perform DOM-heavy operations from your background script.
 
 ## Features
 
-- **🏗️ Easy Creation** — One-call offscreen document creation with reason types
-- **💬 Typed Messaging** — Send and receive messages with full TypeScript support
-- **🔄 Auto-Lifecycle** — Create when needed, close when done
-- **📋 Reason Types** — Pre-defined valid reasons (`DOM_PARSER`, `AUDIO_PLAYBACK`, `CLIPBOARD`, etc.)
-- **👥 Singleton Management** — Ensure only one document exists
-- **🧹 Helper Pattern** — Reusable helper for clean lifecycle management
+- ✅ **Type-safe API** — Full TypeScript support with typed messages
+- ✅ **Create offscreen documents** — Simple configuration with justification reasons
+- ✅ **Bi-directional messaging** — Send messages and receive responses (including async)
+- ✅ **Auto-close support** — Clean up when done
+- ✅ **All MV3 reasons supported** — AUDIO_PLAYBACK, CLIPBOARD, DOM_PARSER, WORKERS, and more
+- ✅ **Singleton helper pattern** — Reusable offscreen helpers for clean code
+- ✅ **Lightweight** — No dependencies, tiny bundle size
 
 ## Install
 
 ```bash
-npm install webext-offscreen
+npm install @theluckystrike/webext-offscreen
+```
+
+Or with pnpm:
+
+```bash
+pnpm add @theluckystrike/webext-offscreen
 ```
 
 ## Quick Start
 
-### Service Worker (Background)
+### 1. Create an offscreen document
+
+First, add `offscreen.html` to your extension:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="offscreen.js"></script>
+</head>
+<body></body>
+</html>
+```
+
+### 2. Use in your service worker (background)
 
 ```typescript
-import { ensureOffscreen, sendToOffscreen, createOffscreenHelper } from "webext-offscreen";
+import { ensureOffscreen, sendToOffscreen } from "webext-offscreen";
 
-// Option 1: Direct API
+// Create the offscreen document
 await ensureOffscreen({
   url: "offscreen.html",
   reasons: ["DOM_PARSER"],
-  justification: "Parse HTML content",
+  justification: "Parse HTML content from external sources",
 });
 
-const result = await sendToOffscreen("parse", { html: "<p>Hello</p>" });
-
-// Option 2: Helper pattern (recommended)
-const offscreen = createOffscreenHelper({
-  url: "offscreen.html",
-  reasons: ["DOM_PARSER"],
-  justification: "Parse HTML content",
+// Send a message and get a response
+const result = await sendToOffscreen("parse", { 
+  html: "<div><h1>Hello World</h1></div>" 
 });
 
-await offscreen.ensure();
-const data = await offscreen.send("parse", { html: "<p>Hello</p>" });
-await offscreen.close();
+console.log(result.text); // "Hello World"
 ```
 
-### Offscreen Document
+### 3. Handle messages in the offscreen document
 
 ```typescript
 import { onOffscreenMessage, setupOffscreenListener } from "webext-offscreen";
 
+// Register handlers
 onOffscreenMessage("parse", (data) => {
   const parser = new DOMParser();
   const doc = parser.parseFromString(data.html, "text/html");
   return { text: doc.body.textContent };
 });
 
-// Async handlers work too
+// Async handlers are supported too
 onOffscreenMessage("fetch", async (data) => {
   const response = await fetch(data.url);
-  return response.json();
+  const json = await response.json();
+  return json;
 });
 
+// Start listening
 setupOffscreenListener();
 ```
 
 ## Use Case Examples
 
-### DOM Parsing
+### DOM Parsing (HTML/XML)
 
 ```typescript
-// Service worker
+// Background script
 const offscreen = createOffscreenHelper({
   url: "offscreen.html",
   reasons: ["DOM_PARSER"],
-  justification: "Extract metadata from HTML",
+  justification: "Parse HTML content from API responses",
 });
 
 await offscreen.ensure();
-const metadata = await offscreen.send("extract-metadata", { html: fetchedHtml });
 
-// Offscreen document
-onOffscreenMessage("extract-metadata", (data) => {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(data.html, "text/html");
-  return {
-    title: doc.querySelector("title")?.textContent,
-    description: doc.querySelector('meta[name="description"]')?.content,
-  };
+// Extract data from HTML
+const productData = await offscreen.send("extract-product", {
+  html: responseText,
 });
+
+// Result: { title: "...", price: "...", description: "..." }
+await offscreen.close();
 ```
 
 ### Audio Playback
 
 ```typescript
-const audioOffscreen = createOffscreenHelper({
-  url: "audio.html",
+// Play audio from background without popup
+await ensureOffscreen({
+  url: "offscreen.html",
   reasons: ["AUDIO_PLAYBACK"],
   justification: "Play notification sounds",
 });
 
-await audioOffscreen.ensure();
-await audioOffscreen.send("play", { url: "/sounds/notify.mp3" });
+await sendToOffscreen("play-audio", {
+  src: "/sounds/notification.mp3",
+  volume: 0.8,
+});
 ```
 
-### Canvas/Image Manipulation
+### Canvas Image Manipulation
 
 ```typescript
-const canvasOffscreen = createOffscreenHelper({
-  url: "canvas.html",
+// Process images in offscreen document
+await ensureOffscreen({
+  url: "offscreen.html",
   reasons: ["BLOBS"],
-  justification: "Resize images before upload",
+  justification: "Resize and optimize images",
 });
 
-await canvasOffscreen.ensure();
-const resized = await canvasOffscreen.send("resize", {
-  imageData: originalBlob,
+const processed = await sendToOffscreen("process-image", {
+  imageData: imageArrayBuffer,
   width: 800,
   height: 600,
+  format: "image/png",
 });
 ```
 
 ### Clipboard Access
 
 ```typescript
-const clipboardOffscreen = createOffscreenHelper({
-  url: "clipboard.html",
+// Read/write clipboard from background
+await ensureOffscreen({
+  url: "offscreen.html",
   reasons: ["CLIPBOARD"],
-  justification: "Copy formatted HTML to clipboard",
+  justification: "Copy extracted data to clipboard",
 });
 
-await clipboardOffscreen.ensure();
-await clipboardOffscreen.send("copy", {
-  html: "<h1>Hello</h1>",
-  text: "Hello",
+await sendToOffscreen("copy-to-clipboard", {
+  text: "Copied from extension!",
 });
+```
+
+### Web Workers (Heavy Computation)
+
+```typescript
+// Use Web Workers for CPU-intensive tasks
+await ensureOffscreen({
+  url: "offscreen.html",
+  reasons: ["WORKERS"],
+  justification: "Process large datasets",
+});
+
+const result = await sendToOffscreen("process-data", {
+  records: largeDataset,
+  operation: "aggregate",
+});
+```
+
+### Helper Pattern (Recommended)
+
+For cleaner code, use the helper pattern:
+
+```typescript
+import { createOffscreenHelper } from "webext-offscreen";
+
+const parser = createOffscreenHelper({
+  url: "offscreen.html",
+  reasons: ["DOM_PARSER"],
+  justification: "Parse HTML content",
+});
+
+// Use throughout your extension
+async function parseHTML(html: string) {
+  await parser.ensure();
+  return parser.send("parse", { html });
+}
+
+async function closeParser() {
+  await parser.close();
+}
 ```
 
 ## API Reference
@@ -160,47 +220,79 @@ await clipboardOffscreen.send("copy", {
 
 | Function | Description | Returns |
 |----------|-------------|---------|
-| `ensureOffscreen(config)` | Create offscreen document if needed | `Promise<void>` |
-| `hasOffscreen()` | Check if document is active | `Promise<boolean>` |
-| `closeOffscreen()` | Close active document | `Promise<void>` |
-| `sendToOffscreen(type, data)` | Send message to offscreen | `Promise<TOut>` |
-| `createOffscreenHelper(config)` | Create reusable helper | `OffscreenHelper` |
+| `ensureOffscreen(config)` | Create offscreen document if it doesn't exist | `Promise<void>` |
+| `hasOffscreen()` | Check if an offscreen document is currently active | `Promise<boolean>` |
+| `closeOffscreen()` | Close the active offscreen document | `Promise<void>` |
+| `sendToOffscreen(type, data)` | Send a typed message to the offscreen document | `Promise<T>` |
+| `createOffscreenHelper(config)` | Create a reusable helper object | `OffscreenHelper` |
+
+### Offscreen Helper Methods
+
+| Method | Description | Returns |
+|--------|-------------|---------|
+| `ensure()` | Ensure the offscreen document exists | `Promise<void>` |
+| `close()` | Close the offscreen document | `Promise<void>` |
+| `isActive()` | Check if document is active | `Promise<boolean>` |
+| `send(type, data)` | Send a message | `Promise<T>` |
 
 ### Offscreen Document Functions
 
 | Function | Description |
 |----------|-------------|
-| `onOffscreenMessage(type, handler)` | Register a message handler |
-| `setupOffscreenListener()` | Start listening for messages |
-| `removeHandler(type)` | Remove a handler |
-| `clearHandlers()` | Remove all handlers |
+| `onOffscreenMessage(type, handler)` | Register a message handler for a specific type |
+| `setupOffscreenListener()` | Start listening for incoming messages |
+| `removeHandler(type)` | Remove a specific message handler |
+| `clearHandlers()` | Remove all registered handlers |
 
-### OffscreenReason Types
+### Offscreen Reasons
+
+These are the valid reasons for creating an offscreen document (as per Chrome's API):
 
 ```typescript
 "TESTING" | "AUDIO_PLAYBACK" | "BLOBS" | "CLIPBOARD" | "DOM_PARSER"
 | "DOM_SCRAPING" | "GEOLOCATION" | "LOCAL_STORAGE" | "MATCH_MEDIA" | "WORKERS"
 ```
 
-## Permissions
+## Configuration
 
-**No special permission required** — Offscreen documents are a core Chrome API. However, you must specify a valid `reason` when creating documents, with a `justification` string explaining why. Chrome reviews may ask about your justifications.
+### Type Definitions
 
-## Part of @zovo/webext
+```typescript
+interface OffscreenConfig {
+  url: string;
+  reasons: OffscreenReason[];
+  justification: string;
+}
 
-`webext-offscreen` is part of the **@zovo/webext** ecosystem — typed utilities for Chrome extensions:
+interface OffscreenMessage<T = unknown> {
+  target: "offscreen";
+  type: string;
+  data: T;
+}
 
-- [webext-storage](https://github.com/theluckystrike/webext-storage) — Typed storage API
-- [webext-messaging](https://github.com/theluckystrike/webext-messaging) — Type-safe messaging
+interface OffscreenResponse<T = unknown> {
+  type: string;
+  data: T;
+}
+```
 
-## Contributing
+## Requirements
 
-Contributions welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md).
+- Chrome (or Chromium-based browser) with Manifest V3 support
+- Node.js 18+ for development
+
+## Related Packages
+
+Part of the **@zovo/webext** ecosystem:
+
+- [webext-storage](https://github.com/theluckystrike/webext-storage) — Typed storage wrapper
+- [webext-messenger](https://github.com/theluckystrike/webext-messenger) — Type-safe messaging
+- [webext-manifest](https://github.com/theluckystrike/webext-manifest) — Manifest utilities
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT
 
 ---
 
-Built by [theluckystrike](https://github.com/theluckystrike) | [zovo.one](https://zovo.one)
+Built by [theluckystrike](https://github.com/theluckystrike) — [zovo.one](https://zovo.one)

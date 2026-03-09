@@ -1,106 +1,200 @@
-<div align="center">
-
-# @theluckystrike/webext-offscreen
-
-Typed offscreen document creation and messaging for Chrome extensions. Manage MV3 offscreen documents with a clean API.
-
-[![npm version](https://img.shields.io/npm/v/@theluckystrike/webext-offscreen)](https://www.npmjs.com/package/@theluckystrike/webext-offscreen)
-[![npm downloads](https://img.shields.io/npm/dm/@theluckystrike/webext-offscreen)](https://www.npmjs.com/package/@theluckystrike/webext-offscreen)
+[![CI](https://github.com/theluckystrike/webext-offscreen/actions/workflows/ci.yml/badge.svg)](https://github.com/theluckystrike/webext-offscreen/actions)
+[![npm](https://img.shields.io/npm/v/@theluckystrike/webext-offscreen)](https://www.npmjs.com/package/@theluckystrike/webext-offscreen)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
-![npm bundle size](https://img.shields.io/bundlephobia/minzip/@theluckystrike/webext-offscreen)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
 
-[Installation](#installation) · [Quick Start](#quick-start) · [API](#api) · [License](#license)
+# webext-offscreen
 
-</div>
+Typed offscreen document creation and messaging for Chrome MV3 extensions.
 
----
+Part of the [@zovo/webext](https://github.com/theluckystrike/webext) ecosystem.
+
+## Why Offscreen Documents?
+
+Chrome MV3 extensions removed DOM access from service workers. This broke common extension patterns:
+
+- **DOM Parsing** — No more `document.createElement()` in background scripts
+- **Audio/Video Processing** — Media elements require a DOM environment
+- **Canvas Operations** — Drawing and image manipulation needs a document
+- **Clipboard Access** — Advanced clipboard operations need DOM APIs
+
+Offscreen documents provide a hidden DOM environment for these tasks. This library makes them type-safe and easy to use.
 
 ## Features
 
-- **Document lifecycle** -- create and close offscreen documents
-- **Reason types** -- typed reasons for offscreen document creation
-- **Messaging** -- send and receive messages to/from offscreen documents
-- **Singleton guard** -- prevents creating duplicate offscreen documents
-- **Typed** -- full TypeScript support
-- **Promise-based** -- async/await for all operations
+- ✅ **Typed API** — Full TypeScript support with proper types
+- ✅ **Auto-close** — Automatically close documents when done
+- ✅ **Singleton Pattern** — Helper class for reusable offscreen management
+- ✅ **Message Passing** — Type-safe communication between background and offscreen
+- ✅ **All Reasons** — Support for all Chrome offscreen document reasons
 
-## Installation
+## Install
 
 ```bash
 npm install @theluckystrike/webext-offscreen
 ```
 
-<details>
-<summary>Other package managers</summary>
-
-```bash
-pnpm add @theluckystrike/webext-offscreen
-# or
-yarn add @theluckystrike/webext-offscreen
-```
-
-</details>
-
 ## Quick Start
 
-```typescript
-import { Offscreen } from "@theluckystrike/webext-offscreen";
+### 1. Service Worker (Background)
 
-await Offscreen.create({
+```typescript
+import { ensureOffscreen, sendToOffscreen, createOffscreenHelper } from "webext-offscreen";
+
+// Option 1: Direct API
+await ensureOffscreen({
   url: "offscreen.html",
-  reasons: ["CLIPBOARD"],
-  justification: "Clipboard access requires an offscreen document in MV3",
+  reasons: ["DOM_PARSER"],
+  justification: "Parse HTML content",
 });
 
-await Offscreen.close();
+const result = await sendToOffscreen("parse", { html: "<p>Hello</p>" });
+
+// Option 2: Helper pattern (recommended)
+const offscreen = createOffscreenHelper({
+  url: "offscreen.html",
+  reasons: ["DOM_PARSER"],
+  justification: "Parse HTML content",
+});
+
+await offscreen.ensure();
+const data = await offscreen.send("parse", { html: "<p>Hello</p>" });
+await offscreen.close();
 ```
 
-## API
+### 2. Offscreen Document
 
-| Method | Description |
-|--------|-------------|
-| `create(options)` | Create an offscreen document |
-| `close()` | Close the offscreen document |
-| `hasDocument()` | Check if an offscreen document exists |
-| `sendMessage(msg)` | Send a message to the offscreen document |
+```typescript
+import { onOffscreenMessage, setupOffscreenListener } from "webext-offscreen";
 
-## Permissions
+onOffscreenMessage("parse", (data) => {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(data.html, "text/html");
+  return { text: doc.body.textContent };
+});
 
-```json
-{ "permissions": ["offscreen"] }
+// Async handlers work too
+onOffscreenMessage("fetch", async (data) => {
+  const response = await fetch(data.url);
+  return response.json();
+});
+
+setupOffscreenListener();
 ```
 
-## Part of @zovo/webext
+## Use Case Examples
 
-This package is part of the [@zovo/webext](https://github.com/theluckystrike) family -- typed, modular utilities for Chrome extension development:
+### DOM Parsing
 
-| Package | Description |
-|---------|-------------|
-| [webext-storage](https://github.com/theluckystrike/webext-storage) | Typed storage with schema validation |
-| [webext-messaging](https://github.com/theluckystrike/webext-messaging) | Type-safe message passing |
-| [webext-tabs](https://github.com/theluckystrike/webext-tabs) | Tab query helpers |
-| [webext-cookies](https://github.com/theluckystrike/webext-cookies) | Promise-based cookies API |
-| [webext-i18n](https://github.com/theluckystrike/webext-i18n) | Internationalization toolkit |
+Parse HTML content in the background without external dependencies:
 
-## Contributing
+```typescript
+// Background script
+const offscreen = createOffscreenHelper({
+  url: "offscreen.html",
+  reasons: ["DOM_PARSER"],
+  justification: "Extract metadata from HTML",
+});
 
-Contributions are welcome! Please open an issue or submit a pull request.
+await offscreen.ensure();
+const metadata = await offscreen.send<{ html: string }, { title: string; links: string[] }>("parse", {
+  html: documentContent,
+});
+await offscreen.close();
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+// In offscreen.html
+onOffscreenMessage("parse", (data) => {
+  const doc = new DOMParser().parseFromString(data.html, "text/html");
+  const links = Array.from(doc.querySelectorAll("a")).map((a) => a.href);
+  return { title: doc.title, links };
+});
+
+setupOffscreenListener();
+```
+
+### Audio Playback
+
+Process audio files in the background:
+
+```typescript
+// Background script
+const audioOffscreen = createOffscreenHelper({
+  url: "audio.html",
+  reasons: ["AUDIO_PLAYBACK"],
+  justification: "Analyze audio files",
+});
+
+await audioOffscreen.ensure();
+const analysis = await audioOffscreen.send("analyze", { audioData: buffer });
+```
+
+### Canvas Operations
+
+Draw images or generate graphics:
+
+```typescript
+// Background script
+const canvasOffscreen = createOffscreenHelper({
+  url: "canvas.html",
+  reasons: ["BLOBS"],
+  justification: "Generate preview images",
+});
+
+await canvasOffscreen.ensure();
+const blob = await canvasOffscreen.send<{ width: number; height: number; color: string }, Blob>(
+  "generate",
+  { width: 200, height: 200, color: "#ff0000" }
+);
+```
+
+### Clipboard Operations
+
+Advanced clipboard access from background:
+
+```typescript
+// Background script
+const clipboardOffscreen = createOffscreenHelper({
+  url: "clipboard.html",
+  reasons: ["CLIPBOARD"],
+  justification: "Read clipboard with formatting",
+});
+
+await clipboardOffscreen.ensure();
+const clipboardData = await clipboardOffscreen.send("read", {});
+```
+
+## API Reference
+
+### Service Worker Functions
+
+| Function | Description |
+|----------|-------------|
+| `ensureOffscreen(config)` | Create offscreen document if not exists |
+| `hasOffscreen()` | Check if offscreen document is active |
+| `closeOffscreen()` | Close offscreen document |
+| `sendToOffscreen(type, data)` | Send typed message to offscreen document |
+| `createOffscreenHelper(config)` | Create a reusable helper object |
+
+### Offscreen Document Functions
+
+| Function | Description |
+|----------|-------------|
+| `onOffscreenMessage(type, handler)` | Register a message handler |
+| `setupOffscreenListener()` | Start listening for messages |
+| `removeHandler(type)` | Remove a message handler |
+| `clearHandlers()` | Remove all handlers |
+
+### Offscreen Reasons
+
+```typescript
+"TESTING" | "AUDIO_PLAYBACK" | "BLOBS" | "CLIPBOARD" | "DOM_PARSER"
+| "DOM_SCRAPING" | "GEOLOCATION" | "LOCAL_STORAGE" | "MATCH_MEDIA" | "WORKERS"
+```
 
 ## License
 
-MIT License -- see [LICENSE](LICENSE) for details.
+MIT
 
 ---
 
-<div align="center">
-
-Built by [theluckystrike](https://github.com/theluckystrike) · [zovo.one](https://zovo.one)
-
-</div>
+Built by [theluckystrike](https://github.com/theluckystrike) — [zovo.one](https://zovo.one)

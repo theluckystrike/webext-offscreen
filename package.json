@@ -1,9 +1,17 @@
 {
   "name": "@theluckystrike/webext-offscreen",
   "version": "1.0.0",
-  "description": "Typed offscreen document creation and messaging for Chrome extensions. Part of @zovo/webext.",
+  "description": "Typed offscreen document creation and messaging for Chrome MV3 extensions — DOM parsing, audio, canvas, and more. Part of @zovo/webext.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theluckystrike/webext-offscreen.git"
+  },
+  "homepage": "https://github.com/theluckystrike/webext-offscreen#readme",
+  "bugs": {
+    "url": "https://github.com/theluckystrike/webext-offscreen/issues"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -23,17 +31,19 @@
   "keywords": [
     "chrome-extension",
     "offscreen",
-    "offscreen-document",
-    "typescript",
     "webextension",
-    "browser-extension",
-    "manifest-v3",
+    "typescript",
+    "chrome",
     "mv3",
-    "clipboard",
-    "dom-access"
+    "offscreen-document",
+    "zovo-webext"
   ],
   "author": "theluckystrike",
   "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "sideEffects": false,
   "devDependencies": {
     "@types/chrome": "^0.0.287",
     "typescript": "^5.7.0",
